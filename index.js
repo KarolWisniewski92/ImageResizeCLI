@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const fs = require('fs');
-const { ifError } = require('assert');
 
+//Pobiera wprowadzone parametry
 const inputArgv = process.argv.slice(2)
 let inputData = {}
 
@@ -23,50 +23,57 @@ inputArgv.forEach((el, id, array) => {
         }
     }
 })
-const dataToCheck = ['path', 'size', 'direction'];
-const action = ['width', 'height'];
 
-let isError;
-dataToCheck.forEach(el => {
-    if (inputData[el] == undefined) {
-        console.log(`Nie wprowadzono parametru "--${el}"!`)
-        isError = true;
-    }
-})
-if (isError) return;
+const validation = () => {
+    const dataToCheck = ['path', 'size', 'direction'];
+    const action = ['width', 'height'];
 
-if (isNaN(inputData.size)) {
-    console.log(`Wprowadzono błędnie parametr "--size"!`)
-    return;
-}
+    //Sprawdza czy podano wszystkie wymagane parametry
+    let isError;
+    dataToCheck.forEach(el => {
+        if (inputData[el] == undefined) {
+            console.log(`Nie wprowadzono parametru "--${el}"!`)
+            isError = true;
+        }
+    })
+    if (isError) return;
 
-if (!action.includes(inputData.direction)) {
-    console.log(`Wprowadzono błędnie parametr "--direction"! Dozwolone wartości to: ${action.join(', ')}!`)
-    return;
-}
-
-fs.stat(inputData.path, (err, stat) => {
-    if (err) {
-        console.log(`Wprowadzono błędny parametr "--path", katalog nie istnieje!`)
+    //Sprawdza czy parametr --size jest liczbą
+    if (isNaN(inputData.size)) {
+        console.log(`Wprowadzono błędnie parametr "--size"!`)
         return;
     }
-})
 
+    //Sprawdza czy parametr --direction jest poprawny
+    if (!action.includes(inputData.direction)) {
+        console.log(`Wprowadzono błędnie parametr "--direction"! Dozwolone wartości to: ${action.join(', ')}!`)
+        return;
+    }
+
+    //Sprawdza czy wskazany katalog istnieje
+    fs.stat(inputData.path, (err, stat) => {
+        if (err) {
+            console.log(`Wprowadzono błędny parametr "--path", katalog nie istnieje!`)
+                (process.exit())
+        }
+    })
+}
+
+//Tworzy pusty katalog _small we wskazanej lokalizacji
 const createDir = () => {
     return new Promise((resolve) => {
         fs.stat(inputData.path + '\\' + '_small', (err, stat) => {
             if (err) {
-                console.log(`Utworzono katalog`)
                 fs.mkdirSync(inputData.path + '\\' + '_small')
                 resolve();
             } else {
-                console.log(`był już katalog`)
                 resolve();
             }
         })
     })
 }
 
+//Pobiera pliki z wskazanego katalogu
 const getPhoto = () => {
     return new Promise((resolve, reject) => {
         fs.readdir(inputData.path, function (err, data) {
@@ -93,20 +100,22 @@ const isDirectory = (link) => {
             }
         })
     })
-
 }
 
-
+//Główna funkcja
 const resizePhoto = async () => {
-
+    validation();
     await createDir();
     const photos = await getPhoto();
-    const linkPhoto = photos.map(el => {
+    const linksToPhoto = photos.map(el => {
         return inputData.path + '\\' + el;
     })
-    const results = await Promise.all(linkPhoto.map(el => { return isDirectory(el) }))
 
-    const onlyPhoto = photos.filter((el, id) => {
+    //Zwraca asynchronicznie tablicę true/false czy ścieżka jest katalogiem
+    const results = await Promise.all(linksToPhoto.map(el => { return isDirectory(el) }))
+
+    //Filtruje według wcześniej stworzonej tablicy true/false
+    const onlyFiles = photos.filter((el, id) => {
         if (results[id] === false) {
             return el
         } else {
@@ -114,29 +123,28 @@ const resizePhoto = async () => {
         }
     })
 
-    onlyPhoto.forEach((el) => {
+    //Filtruje pliki nie będące plikami graficznymi
+    const regExp = /\w*\.(jpge?|gif|png|bmp)/gim
+    const onlyGraphic = onlyFiles.filter(el => {
+        if (regExp.test(el)) {
+            return el;
+        } else {
+            return;
+        }
+    })
 
+    onlyGraphic.forEach((el) => {
         const inputFilePath = inputData.path + '\\' + el;
         const outputFilePath = inputData.path + '\\' + '_small' + '\\' + el;
 
-        console.log(inputFilePath)
-        console.log(outputFilePath)
+        sharp(inputFilePath).resize({ [inputData.direction]: inputData.size }).toFile(outputFilePath)
+            .then(function (newFileInfo) {
+                console.log(`Sukces - Plik ${el} został przeskalowany!`);
+            })
+            .catch(function (err) {
+                console.log(`Błąd - Nie udało się przeskalować pliku ${el}`);
+            });
     })
 
 }
 resizePhoto();
-
-
-
-// sharp(inputFilePath).resize({ [inputData.direction]: inputData.size }).toFile(outputFilePath)
-//     .then(function (newFileInfo) {
-//         console.log("Image Resized");
-//     })
-//     .catch(function (err) {
-//         console.log("Got Error");
-//     });
-
-
-
-
-
