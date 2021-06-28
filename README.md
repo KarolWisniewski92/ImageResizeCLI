@@ -5,4 +5,4 @@ Aby przeskalować zdjęcia należy podać 3 parametry: <br>
 --direction - kierunek według którego ma zostać przeskalowane zdjęcie width / heigth <br>
 --size - rozmar wskazanego boku grafiki po przeskalowaniu <br>
 
-Wersja aplikacji 1.0.0
+Wersja aplikacji 1.0.1
