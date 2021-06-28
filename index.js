@@ -36,18 +36,18 @@ const validation = () => {
             isError = true;
         }
     })
-    if (isError) return;
+    if (isError) (process.exit())
 
     //Sprawdza czy parametr --size jest liczbą
     if (isNaN(inputData.size)) {
         console.log(`Wprowadzono błędnie parametr "--size"!`)
-        return;
+            (process.exit())
     }
 
     //Sprawdza czy parametr --direction jest poprawny
     if (!action.includes(inputData.direction)) {
         console.log(`Wprowadzono błędnie parametr "--direction"! Dozwolone wartości to: ${action.join(', ')}!`)
-        return;
+            (process.exit())
     }
 
     //Sprawdza czy wskazany katalog istnieje
