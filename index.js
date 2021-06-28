@@ -1,5 +1,6 @@
 const sharp = require('sharp');
 const fs = require('fs');
+const { ifError } = require('assert');
 
 const inputArgv = process.argv.slice(2)
 let inputData = {}
@@ -51,16 +52,81 @@ fs.stat(inputData.path, (err, stat) => {
     }
 })
 
-fs.readdir(inputData.path, (err, data) => {
-    if (err) {
-        console.log(err)
-    }
-    
-    console.log(data)
-})
+const createDir = () => {
+    return new Promise((resolve) => {
+        fs.stat(inputData.path + '\\' + '_small', (err, stat) => {
+            if (err) {
+                console.log(`Utworzono katalog`)
+                fs.mkdirSync(inputData.path + '\\' + '_small')
+                resolve();
+            } else {
+                console.log(`był już katalog`)
+                resolve();
+            }
+        })
+    })
+}
 
-const inputFilePath = '';
-const outputFilePath = '';
+const getPhoto = () => {
+    return new Promise((resolve, reject) => {
+        fs.readdir(inputData.path, function (err, data) {
+            if (err) {
+                reject(err);
+            }
+            resolve(data);
+        })
+    })
+}
+
+// Sprawdza asynchronicznie czy podana ścieżka jest katalogiem
+const isDirectory = (link) => {
+    return new Promise((resolve, reject) => {
+        fs.stat(link, (err, data) => {
+            if (err) {
+                console.log(err)
+                reject();
+            }
+            if (data.isDirectory()) {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        })
+    })
+
+}
+
+
+const resizePhoto = async () => {
+
+    await createDir();
+    const photos = await getPhoto();
+    const linkPhoto = photos.map(el => {
+        return inputData.path + '\\' + el;
+    })
+    const results = await Promise.all(linkPhoto.map(el => { return isDirectory(el) }))
+
+    const onlyPhoto = photos.filter((el, id) => {
+        if (results[id] === false) {
+            return el
+        } else {
+            return
+        }
+    })
+
+    onlyPhoto.forEach((el) => {
+
+        const inputFilePath = inputData.path + '\\' + el;
+        const outputFilePath = inputData.path + '\\' + '_small' + '\\' + el;
+
+        console.log(inputFilePath)
+        console.log(outputFilePath)
+    })
+
+}
+resizePhoto();
+
+
 
 // sharp(inputFilePath).resize({ [inputData.direction]: inputData.size }).toFile(outputFilePath)
 //     .then(function (newFileInfo) {
