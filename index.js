@@ -124,8 +124,9 @@ const resizePhoto = async () => {
     })
 
     //Filtruje pliki nie będące plikami graficznymi
-    const regExp = /\w*\.(jpge?|gif|png|bmp)/gim
+    const regExp = /\w*\.(jpge?|gif|png|bmp)/im
     const onlyGraphic = onlyFiles.filter(el => {
+
         if (regExp.test(el)) {
             return el;
         } else {
@@ -134,6 +135,7 @@ const resizePhoto = async () => {
     })
 
     onlyGraphic.forEach((el) => {
+
         const inputFilePath = inputData.path + '\\' + el;
         const outputFilePath = inputData.path + '\\' + '_small' + '\\' + el;
 
